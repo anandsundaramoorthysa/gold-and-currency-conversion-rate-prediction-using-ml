@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Price & USD Exchange Rate Prediction System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-top">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+            <a class="navbar-brand-custom" href="/">
+                <i class="bi bi-gem"></i>
+                <span>Gold Price & USD Exchange Rate</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav navbar-nav-custom ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="bi bi-house-door-fill me-2"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">
+                            <i class="bi bi-info-circle-fill me-2"></i>About
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10 col-xl-8">
+                    <div class="card-modern shadow-lg">
+                        <div class="card-header-modern gold">
+                            <h2 class="mb-0"><i class="bi bi-calculator-fill me-2"></i>Predict Gold Price</h2>
+                        </div>
+                        <div class="card-body-modern p-4">
+                            <form id="predictionForm">
+                                <div class="mb-4">
+                                    <label for="month_year_input" class="form-label fw-semibold mb-2 fs-5">
+                                        <i class="bi bi-calendar3 me-2 text-primary"></i>Select Month & Year
+                                    </label>
+                                    <div class="input-group mb-3">
+                                        <input type="text" 
+                                               id="month_year_input" 
+                                               class="form-control input-modern form-control-lg border-2" 
+                                               placeholder="Click to select month and year"
+                                               readonly
+                                               required>
+                                        <button type="button" class="btn btn-outline-secondary border-2 border-start-0" id="calendarBtn">
+                                            <i class="bi bi-calendar3" style="color: #FFD700;"></i>
+                                        </button>
+                                    </div>
+                                    <div class="date-picker-container d-none" id="datePickerPopup">
+                                        <div class="date-picker-header">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary date-nav-btn" id="prevYear" title="Previous Year">
+                                                <i class="bi bi-chevron-double-left"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary date-nav-btn" id="prevMonth" title="Previous Month">
+                                                <i class="bi bi-chevron-left"></i>
+                                            </button>
+                                            <div class="date-picker-title">
+                                                <span id="currentMonthYear" class="fw-bold">December 2026</span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary date-nav-btn" id="nextMonth" title="Next Month">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary date-nav-btn" id="nextYear" title="Next Year">
+                                                <i class="bi bi-chevron-double-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="month-grid-modern" id="monthGrid"></div>
+                                    </div>
+                                    <input type="hidden" id="month_year" name="month_year" value="2026-12">
+                                </div>
+                                <button type="submit" class="btn btn-gold-modern btn-modern w-100 mt-3 py-3 fs-5">
+                                    <i class="bi bi-graph-up-arrow me-2"></i>Generate Prediction
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="loading" class="text-center d-none py-5 mt-4">
+                        <div class="loading-spinner mx-auto mb-3"></div>
+                        <p class="text-muted fs-5">Processing prediction...</p>
+                    </div>
+
+                    <div id="error" class="alert alert-danger alert-modern d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span id="error-message"></span>
+                    </div>
+
+                    <div id="results" class="d-none mt-4">
+                        <div class="result-card border-3">
+                            <div class="prediction-display py-4">
+                                <div class="prediction-label mb-3">Predicted Gold Price (USD per gram)</div>
+                                <h2 class="prediction-value-large mb-0" id="gold_price">$XX.XX</h2>
+                            </div>
+                            <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
+                                <div class="info-badge shadow-sm">
+                                    <i class="bi bi-cpu-fill text-primary fs-5"></i>
+                                    <span class="fs-6">Model: <strong id="best_model" class="text-primary">{{ best_model }}</strong></span>
+                                </div>
+                                <div class="info-badge shadow-sm">
+                                    <i class="bi bi-shield-check-fill text-info fs-5"></i>
+                                    <span class="fs-6">Confidence: <strong id="confidence" class="text-info">XX%</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-modern shadow-lg mt-4">
+                            <div class="card-header-modern info">
+                                <h3 class="mb-0"><i class="bi bi-globe2 me-2"></i>Currency Exchange Rates</h3>
+                            </div>
+                            <div class="card-body-modern">
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Amount required to get 1 USD
+                                </p>
+                                <div class="table-responsive">
+                                    <table class="table table-modern table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="bi bi-flag-fill me-2"></i>Currency</th>
+                                                <th class="text-end">Exchange Rate</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fx_rates">
+                                            <tr><td><strong>INR</strong></td><td class="text-end">--</td></tr>
+                                            <tr><td><strong>AUD</strong></td><td class="text-end">--</td></tr>
+                                            <tr><td><strong>CAD</strong></td><td class="text-end">--</td></tr>
+                                            <tr><td><strong>JPY</strong></td><td class="text-end">--</td></tr>
+                                            <tr><td><strong>CHF</strong></td><td class="text-end">--</td></tr>
+                                            <tr><td><strong>GBP</strong></td><td class="text-end">--</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-bottom">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+            <div class="footer-content">
+                <p class="mb-0">
+                    <i class="bi bi-c-circle me-1"></i>2025 Gold Price & USD Exchange Rate Prediction System
+                    <span class="mx-2">|</span>
+                    Machine Learning Project
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        let currentDisplayYear = 2026;
+        let currentDisplayMonth = 11;
+        let selectedMonth = 11;
+        let selectedYear = 2026;
+        
+        const dateInput = document.getElementById('month_year_input');
+        const calendarBtn = document.getElementById('calendarBtn');
+        const datePickerPopup = document.getElementById('datePickerPopup');
+        const monthGrid = document.getElementById('monthGrid');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const prevYearBtn = document.getElementById('prevYear');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const nextYearBtn = document.getElementById('nextYear');
+        
+        function updateDisplay() {
+            dateInput.value = `${months[selectedMonth]} ${selectedYear}`;
+            document.getElementById('month_year').value = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+            renderMonthGrid();
+        }
+        
+        function renderMonthGrid() {
+            currentMonthYear.textContent = `${months[currentDisplayMonth]} ${currentDisplayYear}`;
+            monthGrid.innerHTML = '';
+            
+            months.forEach((month, index) => {
+                const monthBtn = document.createElement('button');
+                monthBtn.type = 'button';
+                monthBtn.className = 'month-btn-modern';
+                
+                if (window.innerWidth >= 768) {
+                    monthBtn.textContent = month;
+                } else {
+                    monthBtn.textContent = monthAbbr[index];
+                }
+                
+                if (index === selectedMonth && currentDisplayYear === selectedYear) {
+                    monthBtn.classList.add('selected-modern');
+                }
+                
+                if (currentDisplayYear < 1977 || currentDisplayYear > 2050) {
+                    monthBtn.disabled = true;
+                    monthBtn.classList.add('disabled');
+                }
+                
+                monthBtn.addEventListener('click', () => {
+                    if (currentDisplayYear >= 1977 && currentDisplayYear <= 2050) {
+                        selectedMonth = index;
+                        selectedYear = currentDisplayYear;
+                        updateDisplay();
+                        closeDatePicker();
+                    }
+                });
+                
+                monthGrid.appendChild(monthBtn);
+            });
+        }
+        
+        function openDatePicker() {
+            currentDisplayMonth = selectedMonth;
+            currentDisplayYear = selectedYear;
+            renderMonthGrid();
+            datePickerPopup.classList.remove('d-none');
+        }
+        
+        function closeDatePicker() {
+            datePickerPopup.classList.add('d-none');
+        }
+        
+        prevYearBtn.addEventListener('click', () => {
+            currentDisplayYear = Math.max(1977, currentDisplayYear - 1);
+            renderMonthGrid();
+        });
+        
+        prevMonthBtn.addEventListener('click', () => {
+            currentDisplayMonth--;
+            if (currentDisplayMonth < 0) {
+                currentDisplayMonth = 11;
+                currentDisplayYear = Math.max(1977, currentDisplayYear - 1);
+            }
+            renderMonthGrid();
+        });
+        
+        nextMonthBtn.addEventListener('click', () => {
+            currentDisplayMonth++;
+            if (currentDisplayMonth > 11) {
+                currentDisplayMonth = 0;
+                currentDisplayYear = Math.min(2050, currentDisplayYear + 1);
+            }
+            renderMonthGrid();
+        });
+        
+        nextYearBtn.addEventListener('click', () => {
+            currentDisplayYear = Math.min(2050, currentDisplayYear + 1);
+            renderMonthGrid();
+        });
+        
+        calendarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (datePickerPopup.classList.contains('d-none')) {
+                openDatePicker();
+            } else {
+                closeDatePicker();
+            }
+        });
+        
+        dateInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (datePickerPopup.classList.contains('d-none')) {
+                openDatePicker();
+            } else {
+                closeDatePicker();
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            if (!datePickerPopup.classList.contains('d-none')) {
+                renderMonthGrid();
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !datePickerPopup.classList.contains('d-none')) {
+                closeDatePicker();
+            }
+        });
+        
+        updateDisplay();
+        
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const monthYear = document.getElementById('month_year').value;
+            
+            if (!monthYear) {
+                alert('Please select month and year');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+            const results = document.getElementById('results');
+            
+            loading.classList.remove('d-none');
+            error.classList.add('d-none');
+            results.classList.add('d-none');
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ month_year: monthYear })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+                
+                document.getElementById('gold_price').textContent = '$' + data.prediction.toFixed(4);
+                document.getElementById('best_model').textContent = data.best_model;
+                document.getElementById('confidence').textContent = data.confidence + '%';
+                
+                const fxRates = data.fx_rates;
+                const fxTable = document.getElementById('fx_rates');
+                const currencies = ['INR', 'AUD', 'CAD', 'JPY', 'CHF', 'GBP'];
+                
+                fxTable.innerHTML = currencies.map(currency => {
+                    const value = fxRates[currency];
+                    return `<tr><td><strong>${currency}</strong></td><td class="text-end">${value !== null ? value.toFixed(4) : 'N/A'}</td></tr>`;
+                }).join('');
+                
+                loading.classList.add('d-none');
+                results.classList.remove('d-none');
+                results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (err) {
+                loading.classList.add('d-none');
+                errorMessage.textContent = err.message;
+                error.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

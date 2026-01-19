@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Gold Price & USD Exchange Rate Prediction System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-top">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+            <a class="navbar-brand-custom" href="/">
+                <i class="bi bi-gem"></i>
+                <span>Gold Price & USD Exchange Rate</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav navbar-nav-custom ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door-fill me-2"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/about">
+                            <i class="bi bi-info-circle-fill me-2"></i>About
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-bullseye" style="color: #667eea;"></i>Project Objective
+                </h2>
+                <p class="lead">
+                    This machine learning system predicts <strong>gold price per gram in USD</strong> on a monthly basis using advanced time-series forecasting techniques.
+                </p>
+                <div class="row g-3 mt-3">
+                    <div class="col-md-4">
+                        <div class="card-modern h-100 border-top border-4 border-primary">
+                            <div class="card-body-modern text-center">
+                                <i class="bi bi-cpu-fill fs-1 text-primary mb-3"></i>
+                                <h5 class="fw-bold">ML Prediction</h5>
+                                <p class="text-muted mb-0">Gold price per gram in USD</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern h-100 border-top border-4 border-success">
+                            <div class="card-body-modern text-center">
+                                <i class="bi bi-globe2 fs-1 text-success mb-3"></i>
+                                <h5 class="fw-bold">Display</h5>
+                                <p class="text-muted mb-0">USD exchange rate equivalents</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern h-100 border-top border-4 border-info">
+                            <div class="card-body-modern text-center">
+                                <i class="bi bi-graph-up-arrow fs-1 text-info mb-3"></i>
+                                <h5 class="fw-bold">Features</h5>
+                                <p class="text-muted mb-0">CPI, Fed Funds, Real Rate, Treasury 10Y</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-list-check" style="color: #11998e;"></i>Phase-wise Methodology
+                </h2>
+                <div class="accordion accordion-modern" id="methodologyAccordion">
+                    <div class="accordion-item border-0 mb-3">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#phase1">
+                                <i class="bi bi-1-circle-fill me-2"></i>Phase 1: Data Preprocessing
+                            </button>
+                        </h3>
+                        <div id="phase1" class="accordion-collapse collapse show" data-bs-parent="#methodologyAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Load and inspect all CSV datasets</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Standardize date formats and create year_month merge key</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Handle different frequencies (monthly vs daily)</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Convert daily data to monthly using monthly averages</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Convert gold prices from USD/ounce to USD/gram</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Handle missing values (forward fill, backward fill)</li>
+                                    <li class="mb-0"><i class="bi bi-check-circle-fill text-success me-2"></i>Merge all datasets on year_month (1975-2025)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 mb-3">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phase2">
+                                <i class="bi bi-2-circle-fill me-2"></i>Phase 2: Feature Engineering
+                            </button>
+                        </h3>
+                        <div id="phase2" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="bi bi-graph-up text-primary me-2"></i><strong>Log Transformation:</strong> Gold prices converted to log scale for stationarity</li>
+                                    <li class="mb-2"><i class="bi bi-graph-up text-primary me-2"></i><strong>Macro Features:</strong> CPI YoY Inflation, Real Interest Rate, Yield Spread</li>
+                                    <li class="mb-2"><i class="bi bi-graph-up text-primary me-2"></i><strong>Lag Features:</strong> Gold (lag1, lag3), Fed Funds (lag1), CPI YoY (lag1), Real Rate (lag1)</li>
+                                    <li class="mb-2"><i class="bi bi-graph-up text-primary me-2"></i><strong>Technical Features:</strong> Gold MA3, Gold return (1-month log return)</li>
+                                    <li class="mb-2"><i class="bi bi-graph-up text-primary me-2"></i><strong>Target:</strong> log_gold_next (log of next month's gold price)</li>
+                                    <li class="mb-0"><i class="bi bi-info-circle text-info me-2"></i><strong>Note:</strong> Model predicts log scale to handle non-stationarity. Predictions are back-transformed to USD/gram for display.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 mb-3">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phase3">
+                                <i class="bi bi-3-circle-fill me-2"></i>Phase 3: Train/Validation/Test Split
+                            </button>
+                        </h3>
+                        <div id="phase3" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="card-modern h-100 border-start border-4 border-primary">
+                                            <div class="card-body-modern">
+                                                <h6 class="text-primary fw-bold mb-2">
+                                                    <i class="bi bi-diagram-3 me-2"></i>Train
+                                                </h6>
+                                                <p class="mb-0">1977-01 to 2015-12<br><small class="text-muted">39 years - stable period</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card-modern h-100 border-start border-4 border-warning">
+                                            <div class="card-body-modern">
+                                                <h6 class="text-warning fw-bold mb-2">
+                                                    <i class="bi bi-clipboard-check me-2"></i>Validation
+                                                </h6>
+                                                <p class="mb-0">2016-01 to 2019-12<br><small class="text-muted">4 years - pre-COVID</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card-modern h-100 border-start border-4 border-danger">
+                                            <div class="card-body-modern">
+                                                <h6 class="text-danger fw-bold mb-2">
+                                                    <i class="bi bi-graph-up me-2"></i>Test
+                                                </h6>
+                                                <p class="mb-0">2020-01 to 2025-12<br><small class="text-muted">6 years - out-of-sample</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 mb-3">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phase4">
+                                <i class="bi bi-4-circle-fill me-2"></i>Phase 4: Model Training
+                            </button>
+                        </h3>
+                        <div id="phase4" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="card-modern border-top border-4 border-primary">
+                                            <div class="card-body-modern">
+                                                <h6 class="fw-bold text-primary mb-2">
+                                                    <i class="bi bi-lightning-charge-fill me-2"></i>XGBoost Regressor
+                                                </h6>
+                                                <small class="text-muted">Regularized (max_depth=3, learning_rate=0.03)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card-modern border-top border-4 border-success">
+                                            <div class="card-body-modern">
+                                                <h6 class="fw-bold text-success mb-2">
+                                                    <i class="bi bi-lightning-charge me-2"></i>LightGBM Regressor
+                                                </h6>
+                                                <small class="text-muted">Regularized (max_depth=3, learning_rate=0.03)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card-modern border-top border-4 border-info">
+                                            <div class="card-body-modern">
+                                                <h6 class="fw-bold text-info mb-2">
+                                                    <i class="bi bi-tree me-2"></i>Random Forest
+                                                </h6>
+                                                <small class="text-muted">Regularized (max_depth=5, min_samples_leaf=20)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card-modern border-top border-4 border-secondary">
+                                            <div class="card-body-modern">
+                                                <h6 class="fw-bold text-secondary mb-2">
+                                                    <i class="bi bi-shield me-2"></i>SVR (Baseline)
+                                                </h6>
+                                                <small class="text-muted">RBF kernel with C=10, gamma=0.1</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info alert-modern mt-3">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <strong>Evaluation:</strong> RMSE/MAE on original scale (USD/gram), R² on log scale
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0">
+                        <h3 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#phase5">
+                                <i class="bi bi-5-circle-fill me-2"></i>Phase 5: Flask Web Application
+                            </button>
+                        </h3>
+                        <div id="phase5" class="accordion-collapse collapse" data-bs-parent="#methodologyAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Interactive prediction interface</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>USD exchange rate display</li>
+                                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Comprehensive about page with analysis</li>
+                                    <li class="mb-0">
+                                        <i class="bi bi-info-circle text-info me-2"></i>
+                                        <strong>Confidence Score:</strong> Heuristic derived from historical validation error (RMSE) relative to predicted price. Not a statistical probability but an indicator of model reliability.
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-database" style="color: #4facfe;"></i>Dataset Summary
+                </h2>
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Dataset</th>
+                                <th>Frequency</th>
+                                <th>Date Range</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in dataset_summary_data %}
+                            <tr>
+                                <td><strong>{{ row.Dataset }}</strong></td>
+                                <td>{{ row.Frequency }}</td>
+                                <td>{{ row['Date Range'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-link-45deg" style="color: #f39c12;"></i>Correlation Analysis
+                </h2>
+                <p class="text-muted mb-4">Correlation between Gold Price and Macro Indicators:</p>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card-modern text-center border-top border-primary border-4">
+                            <div class="card-body-modern">
+                                <i class="bi bi-graph-up text-primary fs-1 mb-2"></i>
+                                <div class="metric-label">Gold vs CPI YoY</div>
+                                <div class="fs-3 fw-bold text-primary">{{ "%.3f"|format(correlations.gold_cpi_yoy) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern text-center border-top border-success border-4">
+                            <div class="card-body-modern">
+                                <i class="bi bi-graph-up text-success fs-1 mb-2"></i>
+                                <div class="metric-label">Gold vs Real Rate</div>
+                                <div class="fs-3 fw-bold text-success">{{ "%.3f"|format(correlations.gold_real_rate) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-modern text-center border-top border-info border-4">
+                            <div class="card-body-modern">
+                                <i class="bi bi-graph-up text-info fs-1 mb-2"></i>
+                                <div class="metric-label">Gold vs Fed Funds</div>
+                                <div class="fs-3 fw-bold text-info">{{ "%.3f"|format(correlations.gold_fedfunds) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='correlation_analysis.png') }}" 
+                         alt="Correlation Analysis" 
+                         class="plot-image">
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-bar-chart-fill" style="color: #e74c3c;"></i>Feature Importance
+                </h2>
+                <div class="alert alert-info alert-modern">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <small><strong>XGBoost and LightGBM:</strong> gain-based importance. <strong>Random Forest:</strong> impurity-based importance. <strong>SVR:</strong> permutation importance (model-agnostic).</small>
+                </div>
+                <div class="alert alert-warning alert-modern">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <small><strong>Important:</strong> Feature importance methods differ across models; values are not directly comparable between different model types.</small>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <div class="card-modern">
+                            <div class="card-header-modern">
+                                <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2"></i>XGBoost - Top 10</h5>
+                            </div>
+                            <div class="card-body-modern p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Feature</th>
+                                                <th>Importance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for feature in top_features_xgb %}
+                                            <tr>
+                                                <td><span class="badge bg-primary">{{ loop.index }}</span></td>
+                                                <td><code class="small">{{ feature.feature }}</code></td>
+                                                <td class="small">{{ "%.4f"|format(feature.importance) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card-modern">
+                            <div class="card-header-modern success">
+                                <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>LightGBM - Top 10</h5>
+                            </div>
+                            <div class="card-body-modern p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Feature</th>
+                                                <th>Importance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for feature in top_features_lgb %}
+                                            <tr>
+                                                <td><span class="badge bg-success">{{ loop.index }}</span></td>
+                                                <td><code class="small">{{ feature.feature }}</code></td>
+                                                <td class="small">{{ "%.4f"|format(feature.importance) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card-modern">
+                            <div class="card-header-modern info">
+                                <h5 class="mb-0"><i class="bi bi-tree me-2"></i>Random Forest - Top 10</h5>
+                            </div>
+                            <div class="card-body-modern p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Feature</th>
+                                                <th>Importance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for feature in top_features_rf %}
+                                            <tr>
+                                                <td><span class="badge bg-info">{{ loop.index }}</span></td>
+                                                <td><code class="small">{{ feature.feature }}</code></td>
+                                                <td class="small">{{ "%.4f"|format(feature.importance) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <img src="{{ url_for('static', filename='feature_importance.png') }}" 
+                             alt="Feature Importance" 
+                             class="plot-image">
+                    </div>
+                    <div class="col-12 mt-3">
+                        <div class="card-modern">
+                            <div class="card-header-modern" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+                                <h5 class="mb-0"><i class="bi bi-shield me-2"></i>SVR Permutation Importance (Baseline Model)</h5>
+                            </div>
+                            <div class="card-body-modern">
+                                <div class="alert alert-secondary alert-modern mb-3">
+                                    <small><em>SVR is included as a baseline non-tree model. Feature importance is computed via permutation importance.</em></small>
+                                </div>
+                                <img src="{{ url_for('static', filename='svr_permutation_importance.png') }}" 
+                                     alt="SVR Permutation Importance" 
+                                     class="plot-image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-trophy-fill" style="color: #FFD700;"></i>Model Comparison
+                </h2>
+                <div class="alert alert-success alert-modern">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-award-fill fs-3 me-3"></i>
+                        <div>
+                            <strong class="fs-5">Best Model: {{ best_model }}</strong><br>
+                            <small>Selected by Lowest Validation MAE: {{ "%.4f"|format(best_model_mae) }} USD/gram</small><br>
+                            <small>Validation R² (log-scale): {{ "%.4f"|format(best_model_accuracy) }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-light alert-modern">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small><em>Note: R² is computed on log scale. Models predict log-gold price to handle non-stationarity. Negative R² values during COVID and post-COVID periods indicate structural breaks in macroeconomic relationships, a known limitation in financial time-series forecasting.</em></small>
+                </div>
+                <div class="alert alert-warning alert-modern">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    <small><strong>Confidence Score Note:</strong> The confidence score displayed in predictions is a heuristic derived from historical validation error (RMSE) relative to the predicted price. It should not be interpreted as a statistical probability, but rather as an indicator of model reliability based on past performance.</small>
+                </div>
+                <div class="alert alert-info alert-modern">
+                    <i class="bi bi-graph-up me-2"></i>
+                    <small><strong>Naïve Baseline Comparison:</strong> The Naïve Baseline model (predicting gold(t+1) = gold(t)) is included for scientific validity. All ML models are explicitly compared against this baseline to demonstrate whether machine learning improves prediction accuracy over simple persistence forecasting.</small>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-modern table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th class="text-center">Train RMSE</th>
+                                <th class="text-center">Train MAE</th>
+                                <th class="text-center">Train R²</th>
+                                <th class="text-center">Val RMSE</th>
+                                <th class="text-center">Val MAE</th>
+                                <th class="text-center">Val R²</th>
+                                <th class="text-center">Test RMSE</th>
+                                <th class="text-center">Test MAE</th>
+                                <th class="text-center">Test R²</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in model_comparison %}
+                            <tr {% if row.Model == best_model %}class="table-success" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);"{% endif %}>
+                                <td>
+                                    <strong>{{ row.Model }}</strong>
+                                    {% if row.Model == 'SVR' %} <span class="badge bg-secondary badge-modern">Baseline</span>{% endif %}
+                                    {% if row.Model == 'Naïve Baseline' %} <span class="badge bg-info badge-modern">Naïve</span>{% endif %}
+                                    {% if row.Model == best_model %} <span class="badge bg-warning badge-modern"><i class="bi bi-trophy-fill me-1"></i>Best</span>{% endif %}
+                                </td>
+                                <td class="text-center">{{ "%.4f"|format(row.Train_RMSE) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Train_MAE) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Train_R2) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Val_RMSE) }}</td>
+                                <td class="text-center"><strong>{{ "%.4f"|format(row.Val_MAE) }}</strong></td>
+                                <td class="text-center">{{ "%.4f"|format(row.Val_R2) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Test_RMSE) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Test_MAE) }}</td>
+                                <td class="text-center">{{ "%.4f"|format(row.Test_R2) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <i class="bi bi-graph-up-arrow" style="color: #2c3e50;"></i>Model Predictions Comparison
+                </h2>
+                <p class="text-muted mb-4">Actual vs Predicted Gold Prices - Test Period (2024-2025)</p>
+                
+                <div class="table-responsive mb-4">
+                    <table class="table table-modern table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-end">Actual</th>
+                                <th class="text-end">XGBoost</th>
+                                <th class="text-end">LightGBM</th>
+                                <th class="text-end">Random Forest</th>
+                                <th class="text-end">SVR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in predictions_data %}
+                            <tr>
+                                <td><small class="text-muted">{{ row.Date }}</small></td>
+                                <td class="text-end fw-bold">{{ "%.4f"|format(row.Actual) }}</td>
+                                <td class="text-end">{{ "%.4f"|format(row.XGBoost) }}</td>
+                                <td class="text-end">{{ "%.4f"|format(row.LightGBM) }}</td>
+                                <td class="text-end">{{ "%.4f"|format(row['Random Forest']) }}</td>
+                                <td class="text-end">{{ "%.4f"|format(row.SVR) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='model_predictions_comparison.png') }}" 
+                         alt="Model Predictions Comparison" 
+                         class="plot-image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-bottom">
+        <div class="container-fluid px-3 px-md-4 px-lg-5">
+            <div class="footer-content">
+                <p class="mb-0">
+                    <i class="bi bi-c-circle me-1"></i>2025 Gold Price & USD Exchange Rate Prediction System
+                    <span class="mx-2">|</span>
+                    Machine Learning Project
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
