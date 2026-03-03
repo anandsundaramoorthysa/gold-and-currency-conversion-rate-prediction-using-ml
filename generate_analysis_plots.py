@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
 from pathlib import Path
-from sklearn.inspection import permutation_importance
 
 print("=" * 80)
 print("GENERATING ANALYSIS PLOTS AND DATA")
@@ -39,10 +38,6 @@ with open(models_dir / "lightgbm_model.pkl", 'rb') as f:
     lgb_model = pickle.load(f)
 with open(models_dir / "random_forest_model.pkl", 'rb') as f:
     rf_model = pickle.load(f)
-with open(models_dir / "svr_model.pkl", 'rb') as f:
-    svr_model = pickle.load(f)
-with open(models_dir / "scaler.pkl", 'rb') as f:
-    scaler = pickle.load(f)
 
 with open(input_dir / "feature_columns.pkl", 'rb') as f:
     feature_cols = pickle.load(f)
@@ -51,8 +46,6 @@ models_dict = {
     'xgboost': xgb_model,
     'lightgbm': lgb_model,
     'random_forest': rf_model,
-    'svr': svr_model,
-    'scaler': scaler,
     'feature_columns': feature_cols
 }
 
@@ -105,18 +98,13 @@ axes = axes.flatten()
 
 for idx, (model_key, model_name) in enumerate(models_names.items()):
     model = models_dict[model_key]
-    
-    if model_key == 'xgboost':
-        importances = model.feature_importances_
-    elif model_key == 'lightgbm':
-        importances = model.feature_importances_
-    elif model_key == 'random_forest':
-        importances = model.feature_importances_
-    
+
+    importances = model.feature_importances_
+
     indices = np.argsort(importances)[::-1][:15]
     top_features = [feature_cols[i] for i in indices]
     top_importances = importances[indices]
-    
+
     axes[idx].barh(range(len(top_features)), top_importances)
     axes[idx].set_yticks(range(len(top_features)))
     axes[idx].set_yticklabels(top_features)
@@ -129,80 +117,62 @@ plt.savefig(plots_dir / "feature_importance.png", dpi=300, bbox_inches='tight')
 plt.close()
 print("  ✓ Feature importance plot saved")
 
-# SVR Permutation Importance
-print("\n[4] Calculating SVR permutation importance (this may take a while)...")
-svr_model = models_dict['svr']
-X_test_scaled = scaler.transform(X_test)
-
-perm_importance = permutation_importance(svr_model, X_test_scaled, y_test, 
-                                        n_repeats=10, random_state=42, n_jobs=-1)
-
-indices = np.argsort(perm_importance.importances_mean)[::-1][:15]
-top_features_svr = [feature_cols[i] for i in indices]
-top_importances_svr = perm_importance.importances_mean[indices]
-
-plt.figure(figsize=(10, 8))
-plt.barh(range(len(top_features_svr)), top_importances_svr)
-plt.yticks(range(len(top_features_svr)), top_features_svr)
-plt.xlabel('Permutation Importance')
-plt.title('SVR - Top 15 Features (Permutation Importance)')
-plt.gca().invert_yaxis()
-plt.tight_layout()
-plt.savefig(plots_dir / "svr_permutation_importance.png", dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ SVR permutation importance plot saved")
-
 # ============================================================================
 # MODEL PREDICTIONS COMPARISON
 # ============================================================================
-print("\n[5] Generating model predictions comparison...")
+print("\n[4] Generating model predictions comparison...")
 
-predictions_log = {}
+# Back-transform from log returns to gold prices (USD/gram)
+# price_t+1 = price_t * exp(return_t)
+test_df['year_month'] = pd.to_datetime(test_df['year_month'])
+gold_prices = master_df[['year_month', 'gold_usd_per_gram']].copy()
+test_with_gold = test_df[['year_month']].merge(gold_prices, on='year_month', how='left')
+gold_t = test_with_gold['gold_usd_per_gram'].values
+
+actual_next_price = gold_t * np.exp(y_test.values)
+
+predictions_return = {}
 
 try:
-    predictions_log['XGBoost'] = models_dict['xgboost'].predict(X_test)
+    predictions_return['XGBoost'] = models_dict['xgboost'].predict(X_test)
     print("  ✓ XGBoost predictions generated")
 except Exception as e:
     print(f"  ⚠️  Warning: XGBoost prediction failed: {e}")
-    predictions_log['XGBoost'] = np.zeros(len(X_test)) * np.nan
+    predictions_return['XGBoost'] = np.full(len(X_test), np.nan)
 
 try:
-    predictions_log['LightGBM'] = models_dict['lightgbm'].predict(X_test)
+    predictions_return['LightGBM'] = models_dict['lightgbm'].predict(X_test)
     print("  ✓ LightGBM predictions generated")
 except Exception as e:
     print(f"  ⚠️  Warning: LightGBM prediction failed: {e}")
-    predictions_log['LightGBM'] = np.zeros(len(X_test)) * np.nan
+    predictions_return['LightGBM'] = np.full(len(X_test), np.nan)
 
 try:
-    predictions_log['Random Forest'] = models_dict['random_forest'].predict(X_test)
+    predictions_return['Random Forest'] = models_dict['random_forest'].predict(X_test)
     print("  ✓ Random Forest predictions generated")
-except (AttributeError, Exception) as e:
-    print(f"  ⚠️  Warning: Random Forest prediction failed (sklearn version compatibility issue): {e}")
-    print("     Note: Models trained with sklearn 1.3.2 may not work with sklearn 1.7.2+")
-    print("     Solution: Retrain models with current sklearn version by running Phase 4")
-    predictions_log['Random Forest'] = np.zeros(len(X_test)) * np.nan
-
-try:
-    predictions_log['SVR'] = models_dict['svr'].predict(scaler.transform(X_test))
-    print("  ✓ SVR predictions generated")
 except Exception as e:
-    print(f"  ⚠️  Warning: SVR prediction failed: {e}")
-    predictions_log['SVR'] = np.zeros(len(X_test)) * np.nan
+    print(f"  ⚠️  Warning: Random Forest prediction failed: {e}")
+    predictions_return['Random Forest'] = np.full(len(X_test), np.nan)
 
-y_test_original = np.exp(y_test.values)
+# Ensemble: average of XGB + LGB + RF
+valid_preds = [v for v in predictions_return.values() if not np.isnan(v).all()]
+if valid_preds:
+    predictions_return['Ensemble'] = np.mean(valid_preds, axis=0)
+    print("  ✓ Ensemble predictions generated")
 
-predictions_original = {}
-for k, v in predictions_log.items():
-    if isinstance(v, np.ndarray) and not np.isnan(v).all():
-        predictions_original[k] = np.exp(v)
+# Back-transform predicted returns to gold prices
+predictions_price = {}
+for k, v in predictions_return.items():
+    if not np.isnan(v).all():
+        predictions_price[k] = gold_t * np.exp(v)
     else:
-        predictions_original[k] = v
+        predictions_price[k] = v
 
 test_dates = pd.to_datetime(test_df['year_month'])
 comparison_df = pd.DataFrame({
     'Date': test_dates,
-    'Actual': y_test_original,
-    **{k: v for k, v in predictions_original.items()}
+    'Actual': actual_next_price,
+    **{k: v for k, v in predictions_price.items()}
 })
 
 plt.figure(figsize=(14, 8))
@@ -210,10 +180,10 @@ plt.plot(comparison_df['Date'], comparison_df['Actual'], 'ko-', label='Actual', 
 plt.plot(comparison_df['Date'], comparison_df['XGBoost'], 'b--', label='XGBoost', linewidth=2)
 plt.plot(comparison_df['Date'], comparison_df['LightGBM'], 'r--', label='LightGBM', linewidth=2)
 plt.plot(comparison_df['Date'], comparison_df['Random Forest'], 'g--', label='Random Forest', linewidth=2)
-plt.plot(comparison_df['Date'], comparison_df['SVR'], 'm--', label='SVR', linewidth=2)
+plt.plot(comparison_df['Date'], comparison_df['Ensemble'], 'c--', label='Ensemble', linewidth=2)
 plt.xlabel('Date', fontsize=12)
 plt.ylabel('Gold Price (USD per gram)', fontsize=12)
-plt.title('Model Predictions Comparison - Test Period (2024-2025)', fontsize=16, pad=20)
+plt.title('Model Predictions Comparison - Test Period (2023-2025)', fontsize=16, pad=20)
 plt.legend(fontsize=10)
 plt.grid(True, alpha=0.3)
 plt.xticks(rotation=45)
@@ -225,11 +195,11 @@ print("  ✓ Model predictions comparison plot saved")
 # ============================================================================
 # DATASET SUMMARY
 # ============================================================================
-print("\n[6] Generating dataset summary...")
+print("\n[5] Generating dataset summary...")
 
 master_df = pd.read_csv(input_dir / "master_df.csv")
 dataset_summary = {
-    'Dataset': ['CPI', 'Fed Funds', 'USD-INR', 'USD-AUD', 'USD-CAD', 'USD-JPY', 
+    'Dataset': ['CPI', 'Fed Funds', 'USD-INR', 'USD-AUD', 'USD-CAD', 'USD-JPY',
                 'USD-CHF', 'USD-GBP', 'Gold', 'Treasury 10Y'],
     'Frequency': ['Monthly', 'Monthly', 'Monthly', 'Daily→Monthly', 'Daily→Monthly',
                   'Daily→Monthly', 'Daily→Monthly', 'Daily→Monthly', 'Daily→Monthly',
@@ -255,4 +225,3 @@ print("  ✓ Dataset summary saved")
 print("\n" + "=" * 80)
 print("ANALYSIS COMPLETE!")
 print("=" * 80)
-

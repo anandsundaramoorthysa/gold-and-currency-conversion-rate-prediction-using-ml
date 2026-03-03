@@ -1,9 +1,8 @@
 """
-PHASE 3: TRAIN / VALIDATION / TEST SPLIT (REGIME-SAFE)
-FIXED: Better regime separation to prevent overfitting
-Train: 1977-01 → 2015-12 (stable period)
-Validation: 2016-01 → 2019-12 (pre-COVID, different regime)
-Test: 2020-01 → 2025-12 (COVID and post-COVID period - true out-of-sample)
+PHASE 3: TRAIN / VALIDATION / TEST SPLIT (FIX 3 - EXPANDED TRAINING)
+Train: 1977-01 → 2019-12 (includes pre-COVID price levels up to ~$50/gram)
+Validation: 2020-01 → 2022-12 (COVID + post-COVID inflation - different regime)
+Test: 2023-01 → 2025-12 (gold bull market $1800-$3300/oz - true out-of-sample)
 """
 
 import pandas as pd
@@ -30,10 +29,10 @@ print(f"  Date range: {features_df['year_month'].min()} to {features_df['year_mo
 print("\n[2] Creating time series splits...")
 
 train_start = '1977-01'
-train_end = '2015-12'
-val_start = '2016-01'
-val_end = '2019-12'
-test_start = '2020-01'
+train_end = '2019-12'    # FIX 3: extended from 2015-12 → 2019-12
+val_start = '2020-01'    # FIX 3: COVID period as validation
+val_end = '2022-12'
+test_start = '2023-01'   # FIX 3: gold bull market as true out-of-sample test
 test_end = '2025-12'
 
 train_df = features_df[(features_df['year_month'] >= train_start) & 
@@ -52,24 +51,24 @@ print(f"  Test:    {len(test_df)} rows ({test_df['year_month'].min()} to {test_d
 # ============================================================================
 print("\n[3] Separating features and target...")
 
-exclude_cols = ['year_month', 'date', 'log_gold_next', 'gold_usd_per_gram_next_month']
+exclude_cols = ['year_month', 'date', 'gold_return_next', 'log_gold_next', 'gold_usd_per_gram_next_month']
 exclude_cols = [col for col in exclude_cols if col in features_df.columns]
 
 feature_cols = [col for col in features_df.columns if col not in exclude_cols]
 
 X_train = train_df[feature_cols].copy()
-y_train = train_df['log_gold_next'].copy()
+y_train = train_df['gold_return_next'].copy()
 
 X_val = val_df[feature_cols].copy()
-y_val = val_df['log_gold_next'].copy()
+y_val = val_df['gold_return_next'].copy()
 
 X_test = test_df[feature_cols].copy()
-y_test = test_df['log_gold_next'].copy()
+y_test = test_df['gold_return_next'].copy()
 
 print(f"  Features: {len(feature_cols)}")
 print(f"  Feature names: {feature_cols}")
-print(f"\n  ⚠️  TARGET: log_gold_next (log scale)")
-print(f"     Predictions will be back-transformed: exp(log_pred)")
+print(f"\n  ⚠️  TARGET: gold_return_next (monthly log return)")
+print(f"     Back-transform at inference: predicted_price = current_gold * exp(predicted_return)")
 
 print("\n[4] Saving splits...")
 

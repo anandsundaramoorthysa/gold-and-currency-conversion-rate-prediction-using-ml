@@ -207,16 +207,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="card-modern border-top border-4 border-secondary">
-                                            <div class="card-body-modern">
-                                                <h6 class="fw-bold text-secondary mb-2">
-                                                    <i class="bi bi-shield me-2"></i>SVR (Baseline)
-                                                </h6>
-                                                <small class="text-muted">RBF kernel with C=10, gamma=0.1</small>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                                 <div class="alert alert-info alert-modern mt-3">
                                     <i class="bi bi-info-circle-fill me-2"></i>
@@ -322,7 +312,7 @@
                 </h2>
                 <div class="alert alert-info alert-modern">
                     <i class="bi bi-info-circle-fill me-2"></i>
-                    <small><strong>XGBoost and LightGBM:</strong> gain-based importance. <strong>Random Forest:</strong> impurity-based importance. <strong>SVR:</strong> permutation importance (model-agnostic).</small>
+                    <small><strong>XGBoost and LightGBM:</strong> gain-based importance. <strong>Random Forest:</strong> impurity-based importance.</small>
                 </div>
                 <div class="alert alert-warning alert-modern">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -425,21 +415,6 @@
                              alt="Feature Importance" 
                              class="plot-image">
                     </div>
-                    <div class="col-12 mt-3">
-                        <div class="card-modern">
-                            <div class="card-header-modern" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
-                                <h5 class="mb-0"><i class="bi bi-shield me-2"></i>SVR Permutation Importance (Baseline Model)</h5>
-                            </div>
-                            <div class="card-body-modern">
-                                <div class="alert alert-secondary alert-modern mb-3">
-                                    <small><em>SVR is included as a baseline non-tree model. Feature importance is computed via permutation importance.</em></small>
-                                </div>
-                                <img src="{{ url_for('static', filename='svr_permutation_importance.png') }}" 
-                                     alt="SVR Permutation Importance" 
-                                     class="plot-image">
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -491,8 +466,7 @@
                             <tr {% if row.Model == best_model %}class="table-success" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);"{% endif %}>
                                 <td>
                                     <strong>{{ row.Model }}</strong>
-                                    {% if row.Model == 'SVR' %} <span class="badge bg-secondary badge-modern">Baseline</span>{% endif %}
-                                    {% if row.Model == 'Naïve Baseline' %} <span class="badge bg-info badge-modern">Naïve</span>{% endif %}
+                                    {% if row.Model == 'Naive Baseline' %} <span class="badge bg-info badge-modern">Naive</span>{% endif %}
                                     {% if row.Model == best_model %} <span class="badge bg-warning badge-modern"><i class="bi bi-trophy-fill me-1"></i>Best</span>{% endif %}
                                 </td>
                                 <td class="text-center">{{ "%.4f"|format(row.Train_RMSE) }}</td>
@@ -526,7 +500,7 @@
                                 <th class="text-end">XGBoost</th>
                                 <th class="text-end">LightGBM</th>
                                 <th class="text-end">Random Forest</th>
-                                <th class="text-end">SVR</th>
+                                <th class="text-end">Ensemble</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -537,7 +511,7 @@
                                 <td class="text-end">{{ "%.4f"|format(row.XGBoost) }}</td>
                                 <td class="text-end">{{ "%.4f"|format(row.LightGBM) }}</td>
                                 <td class="text-end">{{ "%.4f"|format(row['Random Forest']) }}</td>
-                                <td class="text-end">{{ "%.4f"|format(row.SVR) }}</td>
+                                <td class="text-end">{{ "%.4f"|format(row.Ensemble) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

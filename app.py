@@ -31,20 +31,12 @@ print("  Loading Random Forest model...")
 with open(models_dir / "random_forest_model.pkl", 'rb') as f:
     rf_model = pickle.load(f)
 
-print("  Loading SVR model...")
-with open(models_dir / "svr_model.pkl", 'rb') as f:
-    svr_model = pickle.load(f)
-
-print("  Loading scaler...")
-with open(models_dir / "scaler.pkl", 'rb') as f:
-    scaler = pickle.load(f)
-
 with open(outputs_dir / "feature_columns.pkl", 'rb') as f:
     feature_cols = pickle.load(f)
 
 eval_results = pd.read_csv(outputs_dir / "model_evaluation_results.csv")
 
-ml_eval_results = eval_results[eval_results['Model'] != 'Naïve Baseline'].copy()
+ml_eval_results = eval_results[eval_results['Model'] != 'Naive Baseline'].copy()
 
 best_model_row = ml_eval_results.loc[ml_eval_results['Val_MAE'].idxmin()]
 best_model_name = str(best_model_row['Model'])
@@ -57,7 +49,6 @@ models_dict = {
     'xgboost': xgb_model,
     'lightgbm': lgb_model,
     'random_forest': rf_model,
-    'svr': svr_model
 }
 
 master_df = pd.read_csv(outputs_dir / "master_df.csv")
@@ -78,61 +69,76 @@ print(f"  Best Model: {best_model_name} (Val MAE: {best_model_val_mae:.4f}, Val 
 
 def compute_features_from_gold_history(gold_history, macro_data_row):
     """
-    Compute features dynamically from a gold price history and macro data.
-    This ensures features are updated with predicted values during recursive forecasting.
-    
+    Compute stationary features from gold price history and macro data.
+    All gold features are returns/ratios (not raw price levels) — Fix 2.
+
     Args:
-        gold_history: List of gold prices (most recent last) - needs at least 3 values for lags
-        macro_data_row: Series with macro variables (fedfunds, cpi, cpi_yoy, real_rate, yield_spread, treasury_10y)
-    
+        gold_history: List of gold prices ordered oldest→newest (needs >= 13 for full features)
+        macro_data_row: Series/dict with macro variables
     Returns:
-        Dictionary of computed features
+        Dictionary of computed features matching feature_cols
     """
     if len(gold_history) == 0:
         raise ValueError("gold_history cannot be empty")
-    
+
     gold_current = gold_history[-1]
-    gold_lag1 = gold_history[-2] if len(gold_history) >= 2 else gold_current
-    gold_lag3 = gold_history[-4] if len(gold_history) >= 4 else gold_lag1
-    
+    gold_prev1 = gold_history[-2] if len(gold_history) >= 2 else gold_current
+    gold_prev3 = gold_history[-4] if len(gold_history) >= 4 else gold_prev1
+    gold_prev6 = gold_history[-7] if len(gold_history) >= 7 else gold_prev3
+    gold_prev12 = gold_history[-13] if len(gold_history) >= 13 else gold_prev6
+
     log_gold = np.log(gold_current)
-    log_gold_lag1 = np.log(gold_lag1)
-    gold_return_1m = log_gold - log_gold_lag1
-    
+    gold_return_1m = log_gold - np.log(gold_prev1)
+    gold_return_3m = log_gold - np.log(gold_prev3)
+    gold_return_6m = log_gold - np.log(gold_prev6)
+    gold_return_12m = log_gold - np.log(gold_prev12)
+
     ma3_window = gold_history[-3:] if len(gold_history) >= 3 else gold_history
     gold_ma3 = np.mean(ma3_window)
-    
+    gold_ma3_ratio = gold_ma3 / gold_current  # stationary momentum, near 1.0
+
+    # 3-month volatility of log returns
+    if len(gold_history) >= 4:
+        recent_returns = [np.log(gold_history[-i]) - np.log(gold_history[-i - 1]) for i in range(1, 4)]
+        gold_volatility_3m = float(np.std(recent_returns, ddof=1))
+    elif len(gold_history) >= 3:
+        recent_returns = [np.log(gold_history[-i]) - np.log(gold_history[-i - 1]) for i in range(1, len(gold_history))]
+        gold_volatility_3m = float(np.std(recent_returns, ddof=1)) if len(recent_returns) > 1 else 0.02
+    else:
+        gold_volatility_3m = 0.02  # default 2% monthly vol
+
+    # Macro features
     real_rate = macro_data_row.get('real_rate', np.nan)
     if pd.isna(real_rate):
         fedfunds = macro_data_row.get('fedfunds', np.nan)
         cpi_yoy = macro_data_row.get('cpi_yoy', np.nan)
         real_rate = fedfunds - cpi_yoy if not pd.isna(fedfunds) and not pd.isna(cpi_yoy) else np.nan
-    
+
     fedfunds_lag1 = macro_data_row.get('fedfunds', np.nan)
     cpi_yoy_lag1 = macro_data_row.get('cpi_yoy', np.nan)
     real_rate_lag1 = macro_data_row.get('real_rate', np.nan)
     if pd.isna(real_rate_lag1):
         real_rate_lag1 = real_rate
-    
+
     yield_spread = macro_data_row.get('yield_spread', np.nan)
     if pd.isna(yield_spread):
         treasury_10y = macro_data_row.get('treasury_10y', np.nan)
         fedfunds = macro_data_row.get('fedfunds', np.nan)
         yield_spread = treasury_10y - fedfunds if not pd.isna(treasury_10y) and not pd.isna(fedfunds) else np.nan
-    
-    computed_features = {
-        'gold_lag1': gold_lag1,
-        'gold_lag3': gold_lag3,
-        'gold_return_1m': gold_return_1m,
-        'gold_ma3': gold_ma3,
-        'real_rate': real_rate,
-        'real_rate_lag1': real_rate_lag1,
-        'fedfunds_lag1': fedfunds_lag1,
-        'cpi_yoy_lag1': cpi_yoy_lag1,
-        'yield_spread': yield_spread
+
+    return {
+        'gold_return_1m':    gold_return_1m,
+        'gold_return_3m':    gold_return_3m,
+        'gold_return_6m':    gold_return_6m,
+        'gold_return_12m':   gold_return_12m,
+        'gold_ma3_ratio':    gold_ma3_ratio,
+        'gold_volatility_3m': gold_volatility_3m,
+        'real_rate':         real_rate,
+        'real_rate_lag1':    real_rate_lag1,
+        'fedfunds_lag1':     fedfunds_lag1,
+        'cpi_yoy_lag1':      cpi_yoy_lag1,
+        'yield_spread':      yield_spread,
     }
-    
-    return computed_features
 
 
 def get_features_for_recursive_prediction(target_month_str):
@@ -152,8 +158,9 @@ def get_features_for_recursive_prediction(target_month_str):
     elif not isinstance(target_month, pd.Timestamp):
         target_month = pd.Timestamp(target_month)
     
-    assert 'log_gold_next' not in feature_cols, "LEAKAGE: target column 'log_gold_next' in features!"
-    assert 'gold_usd_per_gram_next_month' not in feature_cols, "LEAKAGE: target column 'gold_usd_per_gram_next_month' in features!"
+    assert 'gold_return_next' not in feature_cols, "LEAKAGE: target 'gold_return_next' in features!"
+    assert 'log_gold_next' not in feature_cols, "LEAKAGE: old target 'log_gold_next' in features!"
+    assert 'gold_usd_per_gram_next_month' not in feature_cols, "LEAKAGE: 'gold_usd_per_gram_next_month' in features!"
     
     features_df_local = features_df.copy()
     if not pd.api.types.is_datetime64_any_dtype(features_df_local['year_month']):
@@ -169,17 +176,17 @@ def get_features_for_recursive_prediction(target_month_str):
     last_historical_month = pd.to_datetime(last_historical_month_val)
     
     gold_history = []
-    for i in range(min(4, len(historical_data))):
+    for i in range(min(13, len(historical_data))):
         row_idx = len(historical_data) - 1 - i
         if row_idx >= 0:
             gold_val = historical_data.iloc[row_idx].get('gold_usd_per_gram', np.nan)
             if not pd.isna(gold_val):
                 gold_history.insert(0, gold_val)
-    
+
     if len(gold_history) == 0:
         master_historical = master_df[master_df['year_month'] < target_month].copy()
         if len(master_historical) >= 1:
-            for i in range(min(4, len(master_historical))):
+            for i in range(min(13, len(master_historical))):
                 row_idx = len(master_historical) - 1 - i
                 if row_idx >= 0:
                     gold_val = master_historical.iloc[row_idx].get('gold_usd_per_gram', np.nan)
@@ -221,14 +228,14 @@ def get_features_for_recursive_prediction(target_month_str):
         'XGBoost': 'xgboost',
         'LightGBM': 'lightgbm',
         'Random Forest': 'random_forest',
-        'SVR': 'svr'
+        'Ensemble': 'ensemble'
     }
     best_model_key = model_key_map.get(best_model_name, 'xgboost')
-    best_model_for_recursive = models_dict[best_model_key]
-    
+    best_model_for_recursive = models_dict.get(best_model_key)
+
     while current_month < target_month:
         computed_features = compute_features_from_gold_history(gold_history, last_master_row)
-        
+
         current_features_dict = {}
         for col in feature_cols:
             if col in computed_features:
@@ -237,27 +244,31 @@ def get_features_for_recursive_prediction(target_month_str):
                 current_features_dict[col] = last_historical_row[col]
             else:
                 current_features_dict[col] = np.nan
-        
+
         feature_vector = np.array([current_features_dict[col] for col in feature_cols]).reshape(1, -1)
-        
+
         if np.isnan(feature_vector).any():
             last_historical_features = last_historical_row[feature_cols].values.reshape(1, -1)
             nan_mask = np.isnan(feature_vector[0])
             feature_vector[0][nan_mask] = last_historical_features[0][nan_mask]
-        
-        if best_model_key == 'svr':
-            log_pred = best_model_for_recursive.predict(scaler.transform(feature_vector))[0]
+
+        # Model now predicts log return directly (Fix 1)
+        if best_model_key == 'ensemble':
+            preds = [
+                models_dict['xgboost'].predict(feature_vector)[0],
+                models_dict['lightgbm'].predict(feature_vector)[0],
+                models_dict['random_forest'].predict(feature_vector)[0],
+            ]
+            pred_return = float(np.mean(preds))
         else:
-            log_pred = best_model_for_recursive.predict(feature_vector)[0]
-        
-        log_last_gold = np.log(gold_history[-1])
-        log_change = log_pred - log_last_gold
-        log_change_clipped = np.clip(log_change, np.log(0.95), np.log(1.10))
-        predicted_gold = gold_history[-1] * np.exp(log_change_clipped)
+            pred_return = best_model_for_recursive.predict(feature_vector)[0]
+
+        pred_return_clipped = np.clip(pred_return, np.log(0.95), np.log(1.10))
+        predicted_gold = gold_history[-1] * np.exp(pred_return_clipped)
         
         gold_history.append(predicted_gold)
-        if len(gold_history) > 4:
-            gold_history = gold_history[-4:]
+        if len(gold_history) > 13:
+            gold_history = gold_history[-13:]
         
         if current_month.month == 12:
             current_month = pd.Timestamp(year=current_month.year + 1, month=1, day=1)
@@ -371,80 +382,34 @@ def predict():
                 nan_mask = np.isnan(feature_values[0])
                 feature_values[0][nan_mask] = last_historical_features[0][nan_mask]
         
-        predictions_log = {}
-        
-        xgb_pred_log = float(models_dict['xgboost'].predict(feature_values)[0])
-        predictions_log['XGBoost'] = xgb_pred_log
-        
-        lgb_pred_log = float(models_dict['lightgbm'].predict(feature_values)[0])
-        predictions_log['LightGBM'] = lgb_pred_log
-        
-        rf_pred_log = float(models_dict['random_forest'].predict(feature_values)[0])
-        predictions_log['Random Forest'] = rf_pred_log
-        
-        svr_pred_log = float(models_dict['svr'].predict(scaler.transform(feature_values))[0])
-        predictions_log['SVR'] = svr_pred_log
-        
+        # --- Get current gold price for back-transformation ---
         target_date = pd.to_datetime(month_year + '-01')
         available_master_data = master_df[master_df['year_month'] < target_date]
-        
         if len(available_master_data) == 0:
             last_gold_price = 70.0
         else:
-            last_master_row = available_master_data.iloc[-1]
-            last_gold_price = float(last_master_row['gold_usd_per_gram'])
-        
-        log_last_gold = np.log(last_gold_price)
-        
-        if best_model_name == 'XGBoost':
-            main_prediction_log = predictions_log['XGBoost']
-        elif best_model_name == 'LightGBM':
-            main_prediction_log = predictions_log['LightGBM']
-        elif best_model_name == 'Random Forest':
-            main_prediction_log = predictions_log['Random Forest']
-        else:
-            main_prediction_log = predictions_log['SVR']
-        
-        log_change = main_prediction_log - log_last_gold
-        log_change_clipped = np.clip(log_change, np.log(0.95), np.log(1.10))
-        main_prediction = last_gold_price * np.exp(log_change_clipped)
-        
+            last_gold_price = float(available_master_data.iloc[-1]['gold_usd_per_gram'])
+
+        # --- Each model predicts log return directly (Fix 1) ---
+        predictions_return = {}
+        predictions_return['XGBoost'] = float(models_dict['xgboost'].predict(feature_values)[0])
+        predictions_return['LightGBM'] = float(models_dict['lightgbm'].predict(feature_values)[0])
+        predictions_return['Random Forest'] = float(models_dict['random_forest'].predict(feature_values)[0])
+        predictions_return['Ensemble'] = float(np.mean([
+            predictions_return['XGBoost'],
+            predictions_return['LightGBM'],
+            predictions_return['Random Forest'],
+        ]))
+
+        # --- Back-transform: price = current_gold * exp(clipped_return) ---
         predictions_original = {}
-        for model_name, log_pred in predictions_log.items():
-            log_change_model = log_pred - log_last_gold
-            log_change_model_clipped = np.clip(log_change_model, np.log(0.95), np.log(1.10))
-            predictions_original[model_name] = last_gold_price * np.exp(log_change_model_clipped)
-        
-        all_preds = [main_prediction] + list(predictions_original.values())
-        pred_range = max(all_preds) - min(all_preds)
-        pred_std = np.std(all_preds)
-        
-        min_variation = max(0.1, last_gold_price * 0.001)
-        if pred_range < min_variation and pred_std < min_variation * 0.5:
-            import warnings
-            warnings.warn(f"WARNING: Predictions are flat (range={pred_range:.4f}, std={pred_std:.4f}). "
-                         f"This may indicate features are not updating correctly. "
-                         f"Features used: {dict(zip(feature_cols, feature_values[0]))}")
-        
-        macro_features = ['real_rate', 'real_rate_lag1', 'fedfunds_lag1', 'cpi_yoy_lag1', 'yield_spread']
-        macro_values = []
-        for f in macro_features:
-            if f in feature_cols:
-                idx = feature_cols.index(f)
-                val = feature_values[0][idx]
-                if isinstance(val, (np.ndarray, pd.Series)):
-                    val = val.item() if hasattr(val, 'item') else (val.iloc[0] if isinstance(val, pd.Series) else val[0] if len(val) > 0 else np.nan)
-                macro_values.append(float(val) if not pd.isna(val) else np.nan)
-            else:
-                macro_values.append(np.nan)
-        
-        non_nan_values = [v for v in macro_values if not pd.isna(v)]
-        if len(non_nan_values) > 0:
-            first_val = non_nan_values[0]
-            if all(abs(float(v) - float(first_val)) < 1e-6 for v in non_nan_values):
-                import warnings
-                warnings.warn(f"WARNING: Macro features may not be influencing predictions. "
-                             f"Macro values: {dict(zip(macro_features, macro_values))}")
+        for model_name, pred_return in predictions_return.items():
+            pred_return_clipped = np.clip(pred_return, np.log(0.95), np.log(1.10))
+            predictions_original[model_name] = last_gold_price * np.exp(pred_return_clipped)
+
+        main_pred_return = predictions_return.get(best_model_name, predictions_return['XGBoost'])
+        main_pred_return_clipped = np.clip(main_pred_return, np.log(0.95), np.log(1.10))
+        main_prediction = last_gold_price * np.exp(main_pred_return_clipped)
         
         confidence = calculate_confidence_score(main_prediction, best_model_val_rmse)
         
@@ -503,51 +468,56 @@ def about():
     xgb_model = models_dict['xgboost']
     importances = xgb_model.feature_importances_
     indices = np.argsort(importances)[::-1][:10]
-    top_features_xgb = [{'feature': feature_cols[i], 'importance': float(importances[i])} 
+    top_features_xgb = [{'feature': feature_cols[i], 'importance': float(importances[i])}
                         for i in indices]
-    
+
     lgb_model = models_dict['lightgbm']
     lgb_importances = lgb_model.feature_importances_
     lgb_indices = np.argsort(lgb_importances)[::-1][:10]
-    top_features_lgb = [{'feature': feature_cols[i], 'importance': float(lgb_importances[i])} 
+    top_features_lgb = [{'feature': feature_cols[i], 'importance': float(lgb_importances[i])}
                         for i in lgb_indices]
-    
+
     rf_model = models_dict['random_forest']
     rf_importances = rf_model.feature_importances_
     rf_indices = np.argsort(rf_importances)[::-1][:10]
-    top_features_rf = [{'feature': feature_cols[i], 'importance': float(rf_importances[i])} 
+    top_features_rf = [{'feature': feature_cols[i], 'importance': float(rf_importances[i])}
                        for i in rf_indices]
-    
+
     X_test = pd.read_csv(outputs_dir / "X_test.csv")
-    y_test_log = pd.read_csv(outputs_dir / "y_test.csv").iloc[:, 0]
+    y_test_return = pd.read_csv(outputs_dir / "y_test.csv").iloc[:, 0]
     test_df = pd.read_csv(outputs_dir / "test_df.csv")
-    
-    predictions_log = {}
+
+    # Load current gold prices for back-transformation
+    master_raw_about = pd.read_csv(outputs_dir / "master_df.csv")[['year_month', 'gold_usd_per_gram']]
+    gold_test_prices = test_df[['year_month']].merge(master_raw_about, on='year_month', how='left')['gold_usd_per_gram'].values
+
+    # Each model predicts log return; back-transform: price = current_gold * exp(return)
+    predictions_return = {}
     try:
-        predictions_log['XGBoost'] = models_dict['xgboost'].predict(X_test)
-    except Exception as e:
-        predictions_log['XGBoost'] = np.full(len(X_test), np.nan)
-    
+        predictions_return['XGBoost'] = models_dict['xgboost'].predict(X_test)
+    except Exception:
+        predictions_return['XGBoost'] = np.full(len(X_test), np.nan)
     try:
-        predictions_log['LightGBM'] = models_dict['lightgbm'].predict(X_test)
-    except Exception as e:
-        predictions_log['LightGBM'] = np.full(len(X_test), np.nan)
-    
+        predictions_return['LightGBM'] = models_dict['lightgbm'].predict(X_test)
+    except Exception:
+        predictions_return['LightGBM'] = np.full(len(X_test), np.nan)
     try:
-        predictions_log['Random Forest'] = models_dict['random_forest'].predict(X_test)
-    except Exception as e:
-        predictions_log['Random Forest'] = np.full(len(X_test), np.nan)
-    
+        predictions_return['Random Forest'] = models_dict['random_forest'].predict(X_test)
+    except Exception:
+        predictions_return['Random Forest'] = np.full(len(X_test), np.nan)
     try:
-        predictions_log['SVR'] = models_dict['svr'].predict(scaler.transform(X_test))
-    except Exception as e:
-        predictions_log['SVR'] = np.full(len(X_test), np.nan)
-    
-    y_test_original = np.exp(y_test_log.values)
+        predictions_return['Ensemble'] = (
+            predictions_return['XGBoost'] + predictions_return['LightGBM'] +
+            predictions_return['Random Forest']
+        ) / 3
+    except Exception:
+        predictions_return['Ensemble'] = np.full(len(X_test), np.nan)
+
+    y_test_original = gold_test_prices * np.exp(y_test_return.values)
     predictions_original = {}
-    for k, v in predictions_log.items():
+    for k, v in predictions_return.items():
         if isinstance(v, np.ndarray) and not np.isnan(v).all():
-            predictions_original[k] = np.exp(v)
+            predictions_original[k] = gold_test_prices * np.exp(v)
         else:
             predictions_original[k] = np.full(len(X_test), np.nan)
     
