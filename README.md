@@ -1,3 +1,14 @@
+---
+title: Gold Price Prediction
+emoji: 🏆
+colorFrom: yellow
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # Gold Price Prediction System
 
 A machine learning system that predicts gold price per gram in USD using macroeconomic indicators and time-series features. Deployed as a Flask web application.

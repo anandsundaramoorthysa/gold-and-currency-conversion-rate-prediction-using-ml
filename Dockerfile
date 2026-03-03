@@ -7,12 +7,20 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application and pre-built assets (run prepare_for_huggingface.py locally first)
-COPY app.py .
-COPY templates/ templates/
-COPY static/ static/
+# Copy outputs and models (required for app and for generating plots)
 COPY outputs/ outputs/
 COPY models/ models/
+
+# Copy only static assets that are not binary (style.css). PNGs are generated in next step.
+COPY static/ static/
+
+# Generate PNG plots at build time (avoids pushing binary files to Hugging Face)
+COPY generate_analysis_plots.py .
+RUN python generate_analysis_plots.py
+
+# Copy application
+COPY app.py .
+COPY templates/ templates/
 
 # Hugging Face Spaces expose port 7860
 EXPOSE 7860
