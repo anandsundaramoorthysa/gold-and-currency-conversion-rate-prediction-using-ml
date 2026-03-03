@@ -1,0 +1,11 @@
+Dataset,Frequency,Date Range
+CPI,Monthly,0 to 611
+Fed Funds,Monthly,0 to 611
+USD-INR,Monthly,0 to 611
+USD-AUD,Daily→Monthly,0 to 611
+USD-CAD,Daily→Monthly,0 to 611
+USD-JPY,Daily→Monthly,0 to 611
+USD-CHF,Daily→Monthly,0 to 611
+USD-GBP,Daily→Monthly,0 to 611
+Gold,Daily→Monthly,0 to 611
+Treasury 10Y,Daily→Monthly,0 to 611
